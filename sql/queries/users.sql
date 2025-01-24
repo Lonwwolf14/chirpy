@@ -12,3 +12,6 @@ VALUES(
     $4
 )
 RETURNING *;
+
+-- name: DeleteUsers :many
+TRUNCATE TABLE users;

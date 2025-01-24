@@ -42,14 +42,14 @@ func main() {
 	mux.HandleFunc("/admin/metrics", func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleMetrics(appState, w, r)
 	})
-	mux.HandleFunc("/admin/reset", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleReset(appState, w, r)
-	})
 	mux.HandleFunc("/api/validate_chirp", func(w http.ResponseWriter, r *http.Request) {
 		handlers.HandleChirpValidation(appState, w, r)
 	})
 	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleUsers(appState, w, r)
+		handlers.HandleUserCreation(appState, w, r)
+	})
+	mux.HandleFunc("/admin/reset", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleUsersDeletion(appState, w, r)
 	})
 	log.Fatal(srv.ListenAndServe())
 
