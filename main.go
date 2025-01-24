@@ -13,53 +13,67 @@ import (
 )
 
 func main() {
-	mux := http.NewServeMux()
 	const port = ":8080"
-	srv := &http.Server{
-		Addr:    port,
-		Handler: mux,
-	}
+	mux := http.NewServeMux()
 
 	apiConfig, err := config.Read()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error reading configuration: %v", err)
 	}
 
-	db, err := sql.Open("postgres", apiConfig.DbUrl)
+	db, err := initDB(apiConfig.DbUrl)
 	if err != nil {
 		log.Fatalf("Error connecting to the database: %v", err)
 	}
-	defer db.Close() // Ensure the DB connection is closed when the program ends
-	queries := database.New(db)
+	defer db.Close()
 
+	queries := database.New(db)
 	appState := &app.AppState{
 		AppConfig: apiConfig,
 		DB:        queries,
 	}
-
-	mux.Handle("/app/", handlers.MiddlewareMetricsInc(appState, http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-	mux.HandleFunc("/api/healthz", readiness)
-	mux.HandleFunc("/admin/metrics", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleMetrics(appState, w, r)
-	})
-	mux.HandleFunc("/api/validate_chirp", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleChirpValidation(appState, w, r)
-	})
-	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleUserCreation(appState, w, r)
-	})
-	mux.HandleFunc("/admin/reset", func(w http.ResponseWriter, r *http.Request) {
-		handlers.HandleUsersDeletion(appState, w, r)
-	})
+	registerRoutes(mux, appState)
+	srv := &http.Server{
+		Addr:    port,
+		Handler: mux,
+	}
+	log.Printf("Starting server on %s", port)
 	log.Fatal(srv.ListenAndServe())
-
 }
 
-func readiness(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+func initDB(dbURL string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		return nil, err
 	}
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(http.StatusText(http.StatusOK)))
+	return db, nil
+}
+
+func registerRoutes(mux *http.ServeMux, appState *app.AppState) {
+	mux.Handle("/app/", handlers.MiddlewareMetricsInc(appState, http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
+	mux.HandleFunc("/api/healthz", handleReadiness)
+	mux.HandleFunc("/admin/metrics", wrapHandler(appState, handlers.HandleMetrics))
+	mux.HandleFunc("/api/validate_chirp", wrapHandler(appState, handlers.HandleChirpValidation))
+	mux.HandleFunc("/api/users", wrapHandler(appState, handlers.HandleUserCreation))
+	mux.HandleFunc("/admin/reset", wrapHandler(appState, handlers.HandleUsersDeletion))
+}
+
+func handleReadiness(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	respondWithPlainText(w, http.StatusOK, http.StatusText(http.StatusOK))
+}
+
+func wrapHandler(appState *app.AppState, handlerFunc func(*app.AppState, http.ResponseWriter, *http.Request)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handlerFunc(appState, w, r)
+	}
+}
+
+func respondWithPlainText(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(status)
+	w.Write([]byte(message))
 }
