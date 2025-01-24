@@ -17,15 +17,17 @@ INSERT INTO users (
     id,
     email,
     created_at,
-    updated_at
+    updated_at,
+    password
 )
 VALUES(
     $1,
     $2,
     $3,
-    $4
+    $4,
+    $5
 )
-RETURNING id, email, created_at, updated_at
+RETURNING id, email, created_at, updated_at, password
 `
 
 type CreateUserParams struct {
@@ -33,6 +35,7 @@ type CreateUserParams struct {
 	Email     string
 	CreatedAt sql.NullTime
 	UpdatedAt sql.NullTime
+	Password  string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -41,6 +44,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Email,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.Password,
 	)
 	var i User
 	err := row.Scan(
@@ -48,6 +52,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Email,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Password,
 	)
 	return i, err
 }

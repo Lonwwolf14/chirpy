@@ -8,12 +8,14 @@ import (
 	"time"
 
 	"example.com/chirpy/internal/app"
+	"example.com/chirpy/internal/auth"
 	"example.com/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
 type user struct {
 	Email string `json:"email"`
+	Pass  string `json:"password"`
 }
 
 func HandleUserCreation(s *app.AppState, w http.ResponseWriter, r *http.Request) {
@@ -34,12 +36,19 @@ func HandleUserCreation(s *app.AppState, w http.ResponseWriter, r *http.Request)
 	currentTime := time.Now()
 	createdAt := sql.NullTime{Time: currentTime, Valid: true}
 	updatedAt := sql.NullTime{Time: currentTime, Valid: true}
-
+	passwd, err := auth.HashPassword(requestBody.Pass)
+	if err != nil {
+		fmt.Printf("Error hashing password: %v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error hashing password"))
+		return
+	}
 	_, err = s.DB.CreateUser(r.Context(), database.CreateUserParams{
 		ID:        userID,            // Pass the generated UUID
 		Email:     requestBody.Email, // Email from the request
 		CreatedAt: createdAt,         // Current timestamp
 		UpdatedAt: updatedAt,         // Current timestamp
+		Password:  passwd,            // Password from the request
 	})
 	if err != nil {
 		fmt.Printf("Error creating user: %v\n", err)
