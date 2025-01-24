@@ -56,7 +56,7 @@ func registerRoutes(mux *http.ServeMux, appState *app.AppState) {
 	mux.HandleFunc("/api/validate_chirp", wrapHandler(appState, handlers.HandleChirpValidation))
 	mux.HandleFunc("/api/users", wrapHandler(appState, handlers.HandleUserCreation))
 	mux.HandleFunc("/admin/reset", wrapHandler(appState, handlers.HandleUsersDeletion))
-	mux.HandleFunc("/api/chirps", wrapHandler(appState, handlers.HandleCreateChirp))
+	mux.HandleFunc("/api/chirps", wrapHandler(appState, handlers.HandleChirp))
 
 }
 

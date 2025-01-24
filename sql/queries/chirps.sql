@@ -14,3 +14,6 @@ VALUES(
     $5
 )
 RETURNING *;
+
+-- name: GetAllChirps :many
+SELECT * from chirps ORDER BY created_at DESC;
