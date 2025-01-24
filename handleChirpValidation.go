@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 type validChirpRequest struct {
@@ -14,7 +15,17 @@ type errorResponse struct {
 }
 
 type validChirpResponse struct {
-	Valid bool `json:"valid"`
+	Body  string `json:"body"`
+	Valid bool   `json:"valid"`
+}
+
+func cleanWord(word string) bool {
+	word = strings.TrimSpace(word)
+	word = strings.ToLower(word)
+	if word == "kerfuffle" || word == "sharbert" || word == "fornax" {
+		return false
+	}
+	return true
 }
 
 func (cfg *apiConfig) handleChirpValidation(w http.ResponseWriter, r *http.Request) {
@@ -39,9 +50,17 @@ func (cfg *apiConfig) handleChirpValidation(w http.ResponseWriter, r *http.Reque
 		})
 		return
 	}
+	words := strings.Fields(requestBody.Body)
+	for i, word := range words {
+		if !cleanWord(word) {
+			words[i] = "****"
+		}
+	}
+	requestBody.Body = strings.Join(words, " ")
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(validChirpResponse{
+		Body:  requestBody.Body,
 		Valid: true,
 	})
 
