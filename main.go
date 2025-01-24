@@ -9,12 +9,13 @@ import (
 	"example.com/chirpy/internal/config"
 	"example.com/chirpy/internal/database"
 	"example.com/chirpy/internal/handlers"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
 func main() {
 	const port = ":8080"
-	mux := http.NewServeMux()
+	router := mux.NewRouter()
 
 	apiConfig, err := config.Read()
 	if err != nil {
@@ -32,10 +33,10 @@ func main() {
 		AppConfig: apiConfig,
 		DB:        queries,
 	}
-	registerRoutes(mux, appState)
+	registerRoutes(router, appState) // Changed mux to router
 	srv := &http.Server{
 		Addr:    port,
-		Handler: mux,
+		Handler: router, // Changed mux to router
 	}
 	log.Printf("Starting server on %s", port)
 	log.Fatal(srv.ListenAndServe())
@@ -49,15 +50,16 @@ func initDB(dbURL string) (*sql.DB, error) {
 	return db, nil
 }
 
-func registerRoutes(mux *http.ServeMux, appState *app.AppState) {
-	mux.Handle("/app/", handlers.MiddlewareMetricsInc(appState, http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-	mux.HandleFunc("/api/healthz", handleReadiness)
-	mux.HandleFunc("/admin/metrics", wrapHandler(appState, handlers.HandleMetrics))
-	mux.HandleFunc("/api/validate_chirp", wrapHandler(appState, handlers.HandleChirpValidation))
-	mux.HandleFunc("/api/users", wrapHandler(appState, handlers.HandleUserCreation))
-	mux.HandleFunc("/admin/reset", wrapHandler(appState, handlers.HandleUsersDeletion))
-	mux.HandleFunc("/api/chirps", wrapHandler(appState, handlers.HandleChirp))
-
+func registerRoutes(router *mux.Router, appState *app.AppState) { // Changed mux to router
+	router.Handle("/app/", handlers.MiddlewareMetricsInc(appState, http.StripPrefix("/app", http.FileServer(http.Dir("."))))).Methods("GET")
+	router.HandleFunc("/api/healthz", handleReadiness).Methods("GET")
+	router.HandleFunc("/admin/metrics", wrapHandler(appState, handlers.HandleMetrics)).Methods("GET")
+	router.HandleFunc("/api/validate_chirp", wrapHandler(appState, handlers.HandleChirpValidation)).Methods("POST")
+	router.HandleFunc("/api/users", wrapHandler(appState, handlers.HandleUserCreation)).Methods("POST")
+	router.HandleFunc("/admin/reset", wrapHandler(appState, handlers.HandleUsersDeletion)).Methods("POST")
+	router.HandleFunc("/api/chirps", wrapHandler(appState, handlers.HandleChirp)).Methods("POST")
+	router.HandleFunc("/api/chirps", wrapHandler(appState, handlers.HandleChirp)).Methods("GET")
+	router.HandleFunc("/api/chirps/{chirp_id}", wrapHandler(appState, handlers.HandleChirpById)).Methods("GET")
 }
 
 func handleReadiness(w http.ResponseWriter, r *http.Request) {

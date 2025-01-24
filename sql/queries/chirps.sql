@@ -17,3 +17,6 @@ RETURNING *;
 
 -- name: GetAllChirps :many
 SELECT * from chirps ORDER BY created_at DESC;
+
+-- name: GetChirp :one
+SELECT * from chirps WHERE id = $1;

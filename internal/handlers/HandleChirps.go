@@ -9,6 +9,7 @@ import (
 	"example.com/chirpy/internal/app"
 	"example.com/chirpy/internal/database"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 type Chirp struct {
@@ -67,5 +68,36 @@ func HandleChirp(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
+
+}
+
+func HandleChirpById(s *app.AppState, w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	vars := mux.Vars(r)
+	chirpId := vars["chirp_id"]
+	if chirpId == "" {
+		http.Error(w, "Missing chirp_id parameter", http.StatusBadRequest)
+		return
+	}
+	if chirpId == "" {
+		http.Error(w, "Missing chirp_id parameter", http.StatusBadRequest)
+		return
+	}
+	id, err := uuid.Parse(chirpId)
+	if err != nil {
+		http.Error(w, "Invalid chirp_id parameter", http.StatusBadRequest)
+		return
+	}
+	chirp, err := s.DB.GetChirp(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Error getting chirp", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(chirp)
 
 }
