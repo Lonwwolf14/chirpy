@@ -33,7 +33,7 @@ func main() {
 	queries := database.New(db)
 
 	appState := &app.AppState{
-		AppConfig: &apiConfig,
+		AppConfig: apiConfig,
 		DB:        queries,
 	}
 
