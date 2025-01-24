@@ -86,3 +86,20 @@ func (q *Queries) DeleteUsers(ctx context.Context) ([]DeleteUsersRow, error) {
 	}
 	return items, nil
 }
+
+const getUserPassword = `-- name: GetUserPassword :one
+SELECT id, email, created_at, updated_at, password from users WHERE email = $1
+`
+
+func (q *Queries) GetUserPassword(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserPassword, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Password,
+	)
+	return i, err
+}

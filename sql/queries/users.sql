@@ -17,3 +17,6 @@ RETURNING *;
 
 -- name: DeleteUsers :many
 TRUNCATE TABLE users;
+
+-- name: GetUserPassword :one
+SELECT * from users WHERE email = $1;
