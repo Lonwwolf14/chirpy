@@ -1,15 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
-	"sync/atomic"
-)
 
-type apiConfig struct {
-	fileserverHits atomic.Int32
-}
+	"example.com/chirpy/handlers"
+)
 
 func main() {
 	mux := http.NewServeMux()
@@ -18,38 +14,22 @@ func main() {
 		Addr:    port,
 		Handler: mux,
 	}
-	apiCfg := apiConfig{
-		fileserverHits: atomic.Int32{},
-	}
+	apiConfig := handlers.ApiConfig{}
 
-	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
-	mux.HandleFunc("/api/healthz", handlerReadiness)
-	mux.HandleFunc("/admin/metrics", apiCfg.handleMetrics)
-	mux.HandleFunc("/admin/reset", apiCfg.handleReset)
-	mux.HandleFunc("/api/validate_chirp", apiCfg.handleChirpValidation)
+	mux.Handle("/app/", apiConfig.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
+	mux.HandleFunc("/api/healthz", readiness)
+	mux.HandleFunc("/admin/metrics", apiConfig.HandleMetrics)
+	mux.HandleFunc("/admin/reset", apiConfig.HandleReset)
+	mux.HandleFunc("/api/validate_chirp", apiConfig.HandleChirpValidation)
 	log.Fatal(srv.ListenAndServe())
 
 }
 
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileserverHits.Add(1)
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (cfg *apiConfig) handleMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+func readiness(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-
-	htmlContent := fmt.Sprintf(`
-		<html>
-  		<body>
-    		<h1>Welcome, Chirpy Admin</h1>
-    		<p>Chirpy has been visited %d times!</p>
-  		</body>
-		</html>`, cfg.fileserverHits.Load())
-
-	w.Write([]byte(htmlContent))
-
+	w.Write([]byte(http.StatusText(http.StatusOK)))
 }

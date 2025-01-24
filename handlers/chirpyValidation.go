@@ -1,4 +1,4 @@
-package main
+package handlers
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ type validChirpResponse struct {
 	Valid bool `json:"valid"`
 }
 
-func (cfg *apiConfig) handleChirpValidation(w http.ResponseWriter, r *http.Request) {
+func (cfg *ApiConfig) HandleChirpValidation(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
