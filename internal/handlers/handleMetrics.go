@@ -3,9 +3,11 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+
+	"example.com/chirpy/internal/app"
 )
 
-func (cfg *ApiConfig) HandleMetrics(w http.ResponseWriter, r *http.Request) {
+func HandleMetrics(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 
@@ -15,7 +17,7 @@ func (cfg *ApiConfig) HandleMetrics(w http.ResponseWriter, r *http.Request) {
     		<h1>Welcome, Chirpy Admin</h1>
     		<p>Chirpy has been visited %d times!</p>
   		</body>
-		</html>`, cfg.fileserverHits.Load())
+		</html>`, s.AppConfig.GetFileServerHits())
 
 	w.Write([]byte(htmlContent))
 

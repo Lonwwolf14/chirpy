@@ -1,12 +1,16 @@
 package handlers
 
-import "net/http"
+import (
+	"net/http"
 
-func (cfg *ApiConfig) HandleReset(w http.ResponseWriter, r *http.Request) {
+	"example.com/chirpy/internal/app"
+)
+
+func HandleReset(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-	cfg.fileserverHits.Store(0)
+	s.AppConfig.GetFileServerHits()
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Hits reset to 0"))
 }

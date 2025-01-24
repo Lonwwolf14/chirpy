@@ -1,10 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 
-	"example.com/chirpy/handlers"
+	"example.com/chirpy/internal/app"
+	"example.com/chirpy/internal/config"
+	"example.com/chirpy/internal/database"
+	"example.com/chirpy/internal/handlers"
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -14,13 +19,38 @@ func main() {
 		Addr:    port,
 		Handler: mux,
 	}
-	apiConfig := handlers.ApiConfig{}
 
-	mux.Handle("/app/", apiConfig.MiddlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
+	apiConfig, err := config.Read()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	db, err := sql.Open("postgres", apiConfig.DbUrl)
+	if err != nil {
+		log.Fatalf("Error connecting to the database: %v", err)
+	}
+	defer db.Close() // Ensure the DB connection is closed when the program ends
+	queries := database.New(db)
+
+	appState := &app.AppState{
+		AppConfig: &apiConfig,
+		DB:        queries,
+	}
+
+	mux.Handle("/app/", handlers.MiddlewareMetricsInc(appState, http.StripPrefix("/app", http.FileServer(http.Dir(".")))))
 	mux.HandleFunc("/api/healthz", readiness)
-	mux.HandleFunc("/admin/metrics", apiConfig.HandleMetrics)
-	mux.HandleFunc("/admin/reset", apiConfig.HandleReset)
-	mux.HandleFunc("/api/validate_chirp", apiConfig.HandleChirpValidation)
+	mux.HandleFunc("/admin/metrics", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleMetrics(appState, w, r)
+	})
+	mux.HandleFunc("/admin/reset", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleReset(appState, w, r)
+	})
+	mux.HandleFunc("/api/validate_chirp", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleChirpValidation(appState, w, r)
+	})
+	mux.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
+		handlers.HandleUsers(appState, w, r)
+	})
 	log.Fatal(srv.ListenAndServe())
 
 }

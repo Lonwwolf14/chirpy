@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+
+	"example.com/chirpy/internal/app"
 )
 
 type validChirpRequest struct {
@@ -28,7 +30,7 @@ func cleanWord(word string) bool {
 	return true
 }
 
-func (cfg *ApiConfig) HandleChirpValidation(w http.ResponseWriter, r *http.Request) {
+func HandleChirpValidation(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		return
