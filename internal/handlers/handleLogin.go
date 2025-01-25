@@ -58,19 +58,30 @@ func HandleLogin(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("Generated token for ID: %v", user.ID)
+
+	//Generate the refresh token
+	refreshToken, err := auth.MakeRefreshToken()
+	if err != nil {
+		log.Printf("Refresh token generation error: %v", err)
+		http.Error(w, "Error generating refresh token", http.StatusInternalServerError)
+		return
+	}
+
 	//Create the response struct
 	response := struct {
-		ID        uuid.UUID `json:"id"`
-		Email     string    `json:"email"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Token     string    `json:"token"`
+		ID           uuid.UUID `json:"id"`
+		Email        string    `json:"email"`
+		CreatedAt    time.Time `json:"created_at"`
+		UpdatedAt    time.Time `json:"updated_at"`
+		Token        string    `json:"token"`
+		RefreshToken string    `json:"refresh_token"`
 	}{
-		ID:        user.ID,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt.Time,
-		UpdatedAt: user.UpdatedAt.Time,
-		Token:     token,
+		ID:           user.ID,
+		Email:        user.Email,
+		CreatedAt:    user.CreatedAt.Time,
+		UpdatedAt:    user.UpdatedAt.Time,
+		Token:        token,
+		RefreshToken: refreshToken,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
