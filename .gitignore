@@ -1,0 +1,39 @@
+# Binary files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go specific
+*.test
+*.out
+/vendor/
+
+# IDE specific
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment variables
+.env
+*.env
+.env.*
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Application specific
+/tmp
+/dist
+/build
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
