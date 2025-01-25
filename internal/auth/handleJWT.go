@@ -8,13 +8,13 @@ import (
 	"github.com/google/uuid"
 )
 
-type MyCutomClaims struct {
+type MyCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 	// Create claims with multiple fields populated
-	claims := MyCutomClaims{
+	claims := MyCustomClaims{
 		jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -33,7 +33,7 @@ func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (str
 
 func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	//parse the token
-	token, err := jwt.ParseWithClaims(tokenString, &MyCutomClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		// Ensure the signing method is what we expect
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -44,7 +44,7 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 
-	claims, ok := token.Claims.(*MyCutomClaims)
+	claims, ok := token.Claims.(*MyCustomClaims)
 	if !ok || !token.Valid {
 		return uuid.Nil, fmt.Errorf("invalid token")
 	}

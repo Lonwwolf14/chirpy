@@ -56,7 +56,7 @@ func registerRoutes(router *mux.Router, appState *app.AppState) { // Changed mux
 	router.HandleFunc("/admin/metrics", wrapHandler(appState, handlers.HandleMetrics)).Methods("GET")
 	router.HandleFunc("/api/validate_chirp", wrapHandler(appState, handlers.HandleChirpValidation)).Methods("POST")
 	router.HandleFunc("/api/users", wrapHandler(appState, handlers.HandleUserCreation)).Methods("POST")
-	router.HandleFunc("/admin/reset", wrapHandler(appState, handlers.HandleUsersDeletion)).Methods("POST")
+	router.HandleFunc("/admin/reset", wrapHandler(appState, handlers.HandleUsersDeletion)).Methods("DELETE")
 	router.HandleFunc("/api/chirps", wrapHandler(appState, handlers.HandleChirp)).Methods("POST")
 	router.HandleFunc("/api/chirps", wrapHandler(appState, handlers.HandleChirp)).Methods("GET")
 	router.HandleFunc("/api/chirps/{chirp_id}", wrapHandler(appState, handlers.HandleChirpById)).Methods("GET")

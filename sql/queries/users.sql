@@ -16,7 +16,7 @@ VALUES(
 RETURNING *;
 
 -- name: DeleteUsers :many
-TRUNCATE TABLE users;
+TRUNCATE TABLE users CASCADE;
 
 -- name: GetUserPassword :one
 SELECT * from users WHERE email = $1;

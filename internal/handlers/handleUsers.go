@@ -31,7 +31,7 @@ func HandleUserCreation(s *app.AppState, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	//User
+	//User Creation
 	userID := uuid.New()
 	currentTime := time.Now()
 	createdAt := sql.NullTime{Time: currentTime, Valid: true}
@@ -55,15 +55,37 @@ func HandleUserCreation(s *app.AppState, w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error creating user(might already exists)"))
 		return
+
 	}
+
+	//Token Generation
+	token, err := auth.MakeJWT(userID, s.AppConfig.TokenSecret, 24*time.Hour)
+	if err != nil {
+		fmt.Printf("Error generating token: %v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("Error generating token"))
+		return
+	}
+
+	//Response Struct
+	response := struct {
+		ID        uuid.UUID    `json:"id"`
+		Email     string       `json:"email"`
+		CreatedAt sql.NullTime `json:"created_at"`
+		UpdatedAt sql.NullTime `json:"updated_at"`
+		Token     string       `json:"token"`
+	}{
+		ID:        userID,
+		Email:     requestBody.Email,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+		Token:     token,
+	}
+
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte("user created"))
-	if createdAt.Valid && updatedAt.Valid {
-		w.Write([]byte(fmt.Sprintf("User Id: %s\nEmail: %s\nCreated At: %s\nUpdated At: %s", userID, requestBody.Email, createdAt.Time.Format(time.RFC3339), updatedAt.Time.Format(time.RFC3339))))
-	} else {
-		w.Write([]byte("Error: CreatedAt or UpdatedAt is not valid"))
-	}
+	json.NewEncoder(w).Encode(response)
 
 }
 

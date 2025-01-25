@@ -5,16 +5,24 @@ import (
 	"os"
 	"path/filepath"
 	"sync/atomic"
+
+	"github.com/joho/godotenv"
 )
 
 type ApiConfig struct {
 	fileserverHits atomic.Int64
 	DbUrl          string `json:"db_url"`
+	TokenSecret    string
 }
 
 const configFileName = ".gatorconfig.json"
 
 func Read() (*ApiConfig, error) {
+	err := godotenv.Load(".env")
+	if err != nil {
+		return nil, err
+	}
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
@@ -32,7 +40,7 @@ func Read() (*ApiConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	configData.TokenSecret = os.Getenv("JWT_SECRET")
 	return &configData, nil
 }
 
