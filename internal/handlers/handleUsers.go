@@ -106,3 +106,59 @@ func HandleUsersDeletion(s *app.AppState, w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("All users deleted"))
 }
+
+func UpdateUser(s *app.AppState, w http.ResponseWriter, r *http.Request) {
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	requestBody := user{}
+	err = decoder.Decode(&requestBody)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userID, err := auth.ValidateJWT(token, s.AppConfig.TokenSecret)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	newPassword, err := auth.HashPassword(requestBody.Pass)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	_, err = s.DB.UpdateUser(r.Context(), database.UpdateUserParams{
+		ID:        userID,
+		Email:     requestBody.Email,
+		Password:  newPassword,
+		UpdatedAt: sql.NullTime{Time: time.Now(), Valid: true},
+	})
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	response := struct {
+		ID        uuid.UUID    `json:"id"`
+		Email     string       `json:"email"`
+		CreatedAt sql.NullTime `json:"created_at"`
+		UpdatedAt sql.NullTime `json:"updated_at"`
+	}{
+		ID:        userID,
+		Email:     requestBody.Email,
+		CreatedAt: sql.NullTime{Time: time.Now(), Valid: true},
+		UpdatedAt: sql.NullTime{Time: time.Now(), Valid: true},
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("User updated"))
+	json.NewEncoder(w).Encode(response)
+
+}

@@ -63,6 +63,7 @@ func registerRoutes(router *mux.Router, appState *app.AppState) { // Changed mux
 	router.HandleFunc("/api/login", wrapHandler(appState, handlers.HandleLogin)).Methods("POST")
 	router.HandleFunc("/api/refresh", wrapHandler(appState, handlers.RefreshHandler)).Methods("POST")
 	router.HandleFunc("/api/revoke", wrapHandler(appState, handlers.HandleRevoke)).Methods("POST")
+	router.HandleFunc("/api/users", wrapHandler(appState, handlers.UpdateUser)).Methods("PUT")
 }
 
 func handleReadiness(w http.ResponseWriter, r *http.Request) {
