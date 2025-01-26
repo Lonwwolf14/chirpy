@@ -8,6 +8,7 @@ import (
 
 	"example.com/chirpy/internal/app"
 	"example.com/chirpy/internal/auth"
+	"example.com/chirpy/internal/database"
 	"github.com/google/uuid"
 )
 
@@ -64,6 +65,19 @@ func HandleLogin(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Refresh token generation error: %v", err)
 		http.Error(w, "Error generating refresh token", http.StatusInternalServerError)
+		return
+	}
+	//Store the refresh token in the database
+	_, err = s.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:     refreshToken,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    user.ID,
+		ExpiredAt: time.Now().Add(time.Hour * 24 * 30),
+	})
+	if err != nil {
+		log.Printf("Error storing refresh token: %v", err)
+		http.Error(w, "Error storing refresh token", http.StatusInternalServerError)
 		return
 	}
 

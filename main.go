@@ -61,6 +61,8 @@ func registerRoutes(router *mux.Router, appState *app.AppState) { // Changed mux
 	router.HandleFunc("/api/chirps", wrapHandler(appState, handlers.HandleChirp)).Methods("GET")
 	router.HandleFunc("/api/chirps/{chirp_id}", wrapHandler(appState, handlers.HandleChirpById)).Methods("GET")
 	router.HandleFunc("/api/login", wrapHandler(appState, handlers.HandleLogin)).Methods("POST")
+	router.HandleFunc("/api/refresh", wrapHandler(appState, handlers.RefreshHandler)).Methods("POST")
+	router.HandleFunc("/api/revoke", wrapHandler(appState, handlers.HandleRevoke)).Methods("POST")
 }
 
 func handleReadiness(w http.ResponseWriter, r *http.Request) {
