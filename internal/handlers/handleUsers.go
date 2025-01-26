@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"example.com/chirpy/internal/app"
@@ -173,10 +174,22 @@ func UpdateUser(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 }
 
 func HandlePolkaWebhook(s *app.AppState, w http.ResponseWriter, r *http.Request) {
+	//authenticating user
+	key, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if key != os.Getenv("POLKA_KEY") {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	//decoder the body
 	decoder := json.NewDecoder(r.Body)
 	requestBody := WebhookRequest{}
-	err := decoder.Decode(&requestBody)
+	err = decoder.Decode(&requestBody)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
