@@ -117,3 +117,61 @@ func HandleChirpById(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(chirp)
 
 }
+
+func DeleteChirpByID(s *app.AppState, w http.ResponseWriter, r *http.Request) {
+	// Extract the Bearer token from the request header
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		fmt.Printf("Failed to extract Bearer token: %v\n", err)
+		http.Error(w, "Failed to extract authentication token. Please ensure you are logged in.", http.StatusUnauthorized)
+		return
+	}
+
+	// Validate the extracted JWT token
+	userID, err := auth.ValidateJWT(token, s.AppConfig.TokenSecret)
+	if err != nil {
+		fmt.Printf("Failed to validate JWT token: %v\n", err)
+		http.Error(w, "Invalid or expired token. Please log in again.", http.StatusUnauthorized)
+		return
+	}
+
+	// Parse the chirp ID from the request URL and validate its presence
+	chirpID, err := uuid.Parse(mux.Vars(r)["chirp_id"])
+	if err != nil {
+		fmt.Printf("Invalid chirp ID format: %v\n", err)
+		http.Error(w, "Invalid chirp ID format. Please provide a valid chirp ID.", http.StatusBadRequest)
+		return
+	}
+
+	//Get userID using chirpID
+	chirp, err := s.DB.GetChirp(r.Context(), chirpID)
+	if err != nil {
+		fmt.Printf("Failed to get chirp from database: %v\n", err)
+		http.Error(w, "Failed to get chirp. It may not exist.", http.StatusNotFound)
+		return
+	}
+	chirpUserID := chirp.UserID
+
+	if userID != chirpUserID {
+		fmt.Printf("User ID mismatch: %v != %v\n", userID, chirpUserID)
+		http.Error(w, "You do not have permission to delete this chirp.", http.StatusForbidden)
+		return
+	}
+
+	// Attempt to delete the chirp from the database
+	err = s.DB.DeleteChirp(r.Context(), database.DeleteChirpParams{
+		ID:     chirpID,
+		UserID: userID,
+	})
+	if err != nil {
+		fmt.Printf("Failed to delete chirp from database: %v\n", err)
+		http.Error(w, "Failed to delete chirp. It may not exist, or you may not have permission to delete it.", http.StatusForbidden)
+		return
+	}
+
+	// Respond with a success message
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	response := fmt.Sprintf(`{"message": "Chirp deleted successfully.", "user_id": "%s", "chirp_id": "%s"}`, userID.String(), chirpID.String())
+	w.Write([]byte(response))
+}
