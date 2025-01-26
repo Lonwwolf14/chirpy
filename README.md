@@ -10,10 +10,6 @@ The Chirpy API is a simple API for user authentication, chirp management, and re
   - [Health Check](#health-check)
   - [Metrics](#metrics)
 - [Key Features](#key-features)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [Database](#database)
-- [License](#license)
 
 ## API Endpoints
 
@@ -67,11 +63,3 @@ The Chirpy API is a simple API for user authentication, chirp management, and re
 - **Admin Dashboard**: Provides administrative functionality such as viewing request metrics.
 - **Rate Limiting**: Protects the API from abuse by limiting the number of requests a user can make in a given time.
 - **Token Management**: Supports token refreshing and revocation for secure session management.
-
-## Quick Start
-
-Follow these steps to get the Chirpy API up and running:
-
-1. **Download Dependencies**:
-   ```bash
-   go mod download
