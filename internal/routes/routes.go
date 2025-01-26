@@ -22,6 +22,7 @@ func Register(router *mux.Router, appState *app.AppState) {
 	router.HandleFunc("/api/users", wrapHandler(appState, handlers.UpdateUser)).Methods("PUT")
 	router.HandleFunc("/api/chirps/{chirp_id}", wrapHandler(appState, handlers.HandleChirpById)).Methods("GET")
 	router.HandleFunc("/api/chirps/{chirp_id}", wrapHandler(appState, handlers.DeleteChirpByID)).Methods("DELETE")
+	router.HandleFunc("/api/polka/webhooks", wrapHandler(appState, handlers.HandlePolkaWebhook)).Methods("POST")
 }
 
 func wrapHandler(appState *app.AppState, handlerFunc func(*app.AppState, http.ResponseWriter, *http.Request)) http.HandlerFunc {

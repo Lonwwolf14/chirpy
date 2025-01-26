@@ -18,6 +18,15 @@ type user struct {
 	Pass  string `json:"password"`
 }
 
+type WebhookData struct {
+	UserID string `json:"user_id"`
+}
+
+type WebhookRequest struct {
+	Event string      `json:"event"`
+	Data  WebhookData `json:"data"`
+}
+
 func HandleUserCreation(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -160,5 +169,35 @@ func UpdateUser(s *app.AppState, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("User updated"))
 	json.NewEncoder(w).Encode(response)
+
+}
+
+func HandlePolkaWebhook(s *app.AppState, w http.ResponseWriter, r *http.Request) {
+	//decoder the body
+	decoder := json.NewDecoder(r.Body)
+	requestBody := WebhookRequest{}
+	err := decoder.Decode(&requestBody)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	//Check the event
+	if requestBody.Event != "user.upgraded" {
+		http.Error(w, "Invalid event", http.StatusBadRequest)
+		return
+	}
+
+	userID, err := uuid.Parse(requestBody.Data.UserID)
+	if err != nil {
+		return
+	}
+	err = s.DB.UpgradeToRed(r.Context(), userID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("User upgraded to Red"))
 
 }

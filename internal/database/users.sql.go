@@ -27,7 +27,7 @@ VALUES(
     $4,
     $5
 )
-RETURNING id, email, created_at, updated_at, password
+RETURNING id, email, created_at, updated_at, password, is_chirpy_red
 `
 
 type CreateUserParams struct {
@@ -53,6 +53,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Password,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
@@ -88,7 +89,7 @@ func (q *Queries) DeleteUsers(ctx context.Context) ([]DeleteUsersRow, error) {
 }
 
 const getUserPassword = `-- name: GetUserPassword :one
-SELECT id, email, created_at, updated_at, password from users WHERE email = $1
+SELECT id, email, created_at, updated_at, password, is_chirpy_red from users WHERE email = $1
 `
 
 func (q *Queries) GetUserPassword(ctx context.Context, email string) (User, error) {
@@ -100,12 +101,13 @@ func (q *Queries) GetUserPassword(ctx context.Context, email string) (User, erro
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Password,
+		&i.IsChirpyRed,
 	)
 	return i, err
 }
 
 const updateUser = `-- name: UpdateUser :one
-UPDATE users SET email = $2, updated_at = $4, password = $3 WHERE id = $1 RETURNING id, email, created_at, updated_at, password
+UPDATE users SET email = $2, updated_at = $4, password = $3 WHERE id = $1 RETURNING id, email, created_at, updated_at, password, is_chirpy_red
 `
 
 type UpdateUserParams struct {
@@ -129,6 +131,16 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Password,
+		&i.IsChirpyRed,
 	)
 	return i, err
+}
+
+const upgradeToRed = `-- name: UpgradeToRed :exec
+UPDATE users SET is_chirpy_red = TRUE WHERE id = $1
+`
+
+func (q *Queries) UpgradeToRed(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, upgradeToRed, id)
+	return err
 }
